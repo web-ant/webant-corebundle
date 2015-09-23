@@ -1,6 +1,7 @@
 {
     "name": "web-ant/webant-corebundle",
     "description": "Core systems in WebAnt",
+    "type": "symfony-bundle",
     "keywords": ["core", "symfony"],
     "license": "MIT",
     "require": {
@@ -11,10 +12,10 @@
 		"phpunit/phpunit": "~4.5"
     },
     "autoload": {
-      "psr-0": { "WebAnt\\CoreBundle": "" }
+      "psr-0": { "webant-corebundle": "" }
     },
 
-  "target-dir": "FOS/RestBundle",
+    "target-dir": "webant-corebundle",
     "authors": [
         {
             "name": "Yuri Kovalev",
