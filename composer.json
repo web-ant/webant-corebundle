@@ -4,21 +4,17 @@
     "keywords": ["core", "symfony"],
     "license": "MIT",
     "require": {
-        "php": ">=5.3.3"
+        "php": ">=5.3.3",
+        "friendsofsymfony/rest-bundle": "~1.4"
     },
     "require-dev": {
 		"phpunit/phpunit": "~4.5"
     },
     "autoload": {
-        "psr-4": {
-            "PHP\\Math\\BigNumber\\": "src"
-        }
+      "psr-0": { "WebAnt\\CoreBundle": "" }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "PHP\\Math\\": "tests"
-        }
-    },
+
+  "target-dir": "FOS/RestBundle",
     "authors": [
         {
             "name": "Yuri Kovalev",
