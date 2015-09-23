@@ -1,0 +1,29 @@
+{
+    "name": "web-ant/webant-corebundle",
+    "description": "Core systems in WebAnt",
+    "keywords": ["core", "symfony"],
+    "license": "MIT",
+    "require": {
+        "php": ">=5.3.3"
+    },
+    "require-dev": {
+		"phpunit/phpunit": "~4.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHP\\Math\\BigNumber\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHP\\Math\\": "tests"
+        }
+    },
+    "authors": [
+        {
+            "name": "Yuri Kovalev",
+            "homepage": "http://www.webant.ru",
+            "role": "Developer"
+        }
+    ]
+}
