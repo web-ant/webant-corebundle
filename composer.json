@@ -16,11 +16,11 @@
     },
 
     "target-dir": "WebAnt/CoreBundle",
-        "authors": [
-            {
-                "name": "Yuri Kovalev",
-                "homepage": "http://www.webant.ru",
-                "role": "Developer"
-            }
-        ]
+    "authors": [
+        {
+            "name": "Yuri Kovalev",
+            "homepage": "http://www.webant.ru",
+            "role": "Developer"
+        }
+    ]
 }
