@@ -39,7 +39,7 @@ Now you must to connect AbstractController and inherit the classes from it, exam
 
 ``` php
 <?php
-// RootDit/src/DemoBundle/Controller/DemoController.php;
+// RootDir/src/DemoBundle/Controller/DemoController.php;
 
 namespace /src/DemoBundle/Controller;
 
