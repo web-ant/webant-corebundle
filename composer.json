@@ -12,15 +12,15 @@
 		"phpunit/phpunit": "~4.5"
     },
     "autoload": {
-      "psr-0": { "webant-corebundle": "" }
+      "psr-0": { "WebAnt\\CoreBundle": "" }
     },
 
-    "target-dir": "webant-corebundle",
-    "authors": [
-        {
-            "name": "Yuri Kovalev",
-            "homepage": "http://www.webant.ru",
-            "role": "Developer"
-        }
-    ]
+    "target-dir": "WebAnt/CoreBundle",
+        "authors": [
+            {
+                "name": "Yuri Kovalev",
+                "homepage": "http://www.webant.ru",
+                "role": "Developer"
+            }
+        ]
 }
