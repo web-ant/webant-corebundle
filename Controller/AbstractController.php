@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use JMS\Serializer\SerializationContext;
 
 
-class AbstractController extends FOSRestController
+abstract class AbstractController extends FOSRestController
 {
 
 
