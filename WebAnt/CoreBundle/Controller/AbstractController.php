@@ -11,8 +11,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use JMS\Serializer\SerializationContext;
 
 
-abstract class AbstractController extends FOSRestController
+class AbstractController extends FOSRestController
 {
+
+
     protected        $objectClass;
     protected        $objectKey  = 'id';
     static protected $entityPath = 'WebAnt\DemoBundle\Entity\\';
@@ -20,6 +22,7 @@ abstract class AbstractController extends FOSRestController
 
     private function from_camel_case($input)
     {
+
         preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
 
         $ret = $matches[0];
