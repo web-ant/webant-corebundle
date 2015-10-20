@@ -27,6 +27,7 @@ class ListenerController
     public function onKernelException(GetResponseForExceptionEvent $event)
     {
         $this->addLogs($event,false);
+        $event->setException($event->getException());
     }
 
     public function onKernelResponse(FilterResponseEvent $event)
@@ -40,14 +41,17 @@ class ListenerController
         $queryLogs = new QueryLogs();
 
         $request = $event->getRequest();
-        $controller = explode('::',$request->attributes->get('_controller'));
+        $controller = explode('::', $request->attributes->get('_controller'));
+        if($controller[0] == 'twig.controller.exception:showAction') {
+            $controller[1] = 'error';
+        }
 
         $user = $this->token_storage->getToken()->getUser();
         if($user != "anon."){
             $queryLogs->setUser($user);
         }
 
-
+        $queryLogs->setController($controller[0]);
         $queryLogs->setAction($controller[1]);
 
         //exception response
@@ -64,6 +68,5 @@ class ListenerController
 
         $this->em->persist($queryLogs);
         $this->em->flush();
-        dump($queryLogs);exit;
     }
 }

@@ -17,7 +17,7 @@ abstract class AbstractController extends FOSRestController
 
     protected        $objectClass;
     protected        $objectKey  = 'id';
-    static protected $entityPath = 'WebAnt\DemoBundle\Entity\\';
+    static protected $entityPath = 'WebAnt\BaseBundle\Entity\\';
 
 
     private function from_camel_case($input)
@@ -261,7 +261,7 @@ abstract class AbstractController extends FOSRestController
         } catch
         (\Exception $e) {
 
-            throw new HttpException(400, 'Error with DatabaseError with Database ' . $e->getMessage());
+            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
         }
 
         return $object;

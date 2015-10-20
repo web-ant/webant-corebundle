@@ -36,7 +36,7 @@ class QueryLogs
     /**
      * @var \WebAnt\BaseBundle\Entity\User
      *
-     * @ORM\ManyToOne(targetEntity="\WebAnt\BaseBundle\Entity\User")
+     * @ORM\ManyToOne(targetEntity="WebAnt\BaseBundle\Entity\User")
      * @ORM\JoinColumns({
      *   @ORM\JoinColumn(name="id_user", referencedColumnName="id", onDelete="SET NULL")
      * })
@@ -49,6 +49,13 @@ class QueryLogs
      * @ORM\Column(name="action", type="string", nullable=false)
      */
     private $action;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="controller", type="string", nullable=false)
+     */
+    private $controller;
 
     /**
      * @var integer
@@ -92,6 +99,22 @@ class QueryLogs
     public function getAction()
     {
         return $this->action;
+    }
+
+    /**
+     * @param string $controller
+     */
+    public function setController($controller)
+    {
+        $this->controller = $controller;
+    }
+
+    /**
+     * @return string
+     */
+    public function getController()
+    {
+        return $this->controller;
     }
 
     /**
@@ -175,7 +198,7 @@ class QueryLogs
     }
 
     /**
-     * @param \WebAnt\BaseBundle\Entity\User $user
+     * @param \WebAnt\CoreBundle\Entity\UserCore $user
      */
     public function setUser($user)
     {
@@ -183,7 +206,7 @@ class QueryLogs
     }
 
     /**
-     * @return \WebAnt\BaseBundle\Entity\User
+     * @return \WebAnt\CoreBundle\Entity\UserCore
      */
     public function getUser()
     {
