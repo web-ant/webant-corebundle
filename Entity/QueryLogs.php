@@ -198,7 +198,7 @@ class QueryLogs
     }
 
     /**
-     * @param \WebAnt\CoreBundle\Entity\UserCore $user
+     * @param \WebAnt\BaseBundle\Entity\User $user
      */
     public function setUser($user)
     {
@@ -206,7 +206,7 @@ class QueryLogs
     }
 
     /**
-     * @return \WebAnt\CoreBundle\Entity\UserCore
+     * @return \WebAnt\BaseBundle\Entity\User
      */
     public function getUser()
     {

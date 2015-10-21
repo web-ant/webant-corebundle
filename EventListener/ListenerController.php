@@ -26,26 +26,23 @@ class ListenerController
 
     public function onKernelException(GetResponseForExceptionEvent $event)
     {
-        $this->addLogs($event,false);
-        $event->setException($event->getException());
+        $event->getRequest()->attributes->set('exception', $event->getException());
     }
 
     public function onKernelResponse(FilterResponseEvent $event)
     {
-        $this->addLogs($event);
-        $event->setResponse($event->getResponse());
+        $controller = explode('\\', $event->getRequest()->attributes->get('_controller'));
+        if($controller[0] == 'WebAnt') {
+            $this->addLogs($event);
+        }
+
     }
 
     private function addLogs($event,$status = true) {
 
         $queryLogs = new QueryLogs();
-
         $request = $event->getRequest();
         $controller = explode('::', $request->attributes->get('_controller'));
-        if($controller[0] == 'twig.controller.exception:showAction') {
-            $controller[1] = 'error';
-        }
-
         $user = $this->token_storage->getToken()->getUser();
         if($user != "anon."){
             $queryLogs->setUser($user);
@@ -54,17 +51,13 @@ class ListenerController
         $queryLogs->setController($controller[0]);
         $queryLogs->setAction($controller[1]);
 
-        //exception response
-        if($status) {
-            $datalogs['http_code_response'] = $event->getResponse()->getStatusCode();
-        } else {
-            $datalogs['http_code_response'] = $event->getException()->getStatusCode();
-        }
+        $datalogs['http_code_response'] = $event->getResponse()->getStatusCode();
 
         $queryLogs->setHttpCodeResponse($datalogs['http_code_response']);
         $queryLogs->setMethod($request->getMethod());
 
         $queryLogs->setRequestTime($request->server->get('REQUEST_TIME'));
+
 
         $this->em->persist($queryLogs);
         $this->em->flush();
