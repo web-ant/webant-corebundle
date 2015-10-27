@@ -435,7 +435,7 @@ abstract class AbstractController extends FOSRestController
             }
         } catch
         (\Exception $e) {
-            throw new HttpException(40, 'Error with Database ' . $e->getMessage());
+            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
         }
 
         return $object;
