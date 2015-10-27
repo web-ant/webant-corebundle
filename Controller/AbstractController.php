@@ -435,7 +435,7 @@ abstract class AbstractController extends FOSRestController
             }
         } catch
         (\Exception $e) {
-            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
+            throw new HttpException(40, 'Error with Database ' . $e->getMessage());
         }
 
         return $object;
@@ -485,8 +485,12 @@ abstract class AbstractController extends FOSRestController
                     }
 
                     $prop->setValue($object, $subObject);
-                } else if(!is_null($value))
+                } else if(!is_null($value)) {
+                    if($type == '/DateTime') {
+                        $value = new \DateTime($value);
+                    }
                     $prop->setValue($object, $value);
+                }
             }
         }
         //запуск валидатора
