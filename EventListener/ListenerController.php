@@ -36,7 +36,7 @@ class ListenerController
         $controller = explode('::', $request->attributes->get('_controller'));
         $user = $this->token_storage->getToken();
         if(!is_null($user)) {
-            $user->getUser();
+            $user = $user->getUser();
             if($user != "anon."){
                 $queryLogs->setUser($user);
             }
