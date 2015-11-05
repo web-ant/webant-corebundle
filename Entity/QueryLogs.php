@@ -34,9 +34,9 @@ class QueryLogs
     private $id;
 
     /**
-     * @var \WebAnt\BaseBundle\Entity\User
+     * @var \WebAnt\UserBundle\Entity\User
      *
-     * @ORM\ManyToOne(targetEntity="WebAnt\BaseBundle\Entity\User")
+     * @ORM\ManyToOne(targetEntity="WebAnt\UserBundle\Entity\User")
      * @ORM\JoinColumns({
      *   @ORM\JoinColumn(name="id_user", referencedColumnName="id", onDelete="SET NULL")
      * })
@@ -198,7 +198,7 @@ class QueryLogs
     }
 
     /**
-     * @param \WebAnt\BaseBundle\Entity\User $user
+     * @param \WebAnt\UserBundle\Entity\User $user
      */
     public function setUser($user)
     {
@@ -206,7 +206,7 @@ class QueryLogs
     }
 
     /**
-     * @return \WebAnt\BaseBundle\Entity\User
+     * @return \WebAnt\UserBundle\Entity\User
      */
     public function getUser()
     {
