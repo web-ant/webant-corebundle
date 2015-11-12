@@ -343,7 +343,7 @@ EOT
                 } else {
                     $help = sprintf("        <comment>resource: \"@%s/Resources/config/routing.%s\"</comment>\n", $bundle, $format);
                 }
-                $help .= "        <comment>prefix:   /</comment>\n";
+                $help .= "        <comment>prefix:   /api</comment>\n";
 
                 return array(
                     '- Import the bundle\'s routing resource in the app main routing file:',
