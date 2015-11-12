@@ -1,7 +1,14 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: vdaron
+ * Date: 13.06.15
+ * Time: 11:24
+ */
 
 namespace WebAnt\CoreBundle\Controller;
 
+use WebAnt\CoreBundle\Util\CamelCase;
 use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\EntityManager;
 use FOS\RestBundle\Controller\Annotations\View;
@@ -13,24 +20,8 @@ use JMS\Serializer\SerializationContext;
 
 abstract class AbstractController extends FOSRestController
 {
-
-
-    protected        $objectClass;
-    protected        $objectKey  = 'id';
-    static protected $entityPath = 'WebAnt\BaseBundle\Entity\\';
-
-
-    private function from_camel_case($input)
-    {
-
-        preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
-
-        $ret = $matches[0];
-        foreach ($ret as &$match) {
-            $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
-        }
-        return implode('_', $ret);
-    }
+    protected $objectClass;
+    protected $objectKey = 'id';
 
     /**
      * Получение репозитория
@@ -43,6 +34,7 @@ abstract class AbstractController extends FOSRestController
          * @var EntityManager
          */
         $em = $this->getDoctrine()->getManager();
+
         return $em->getRepository($this->objectClass);
     }
 
@@ -89,10 +81,10 @@ abstract class AbstractController extends FOSRestController
      */
     public function getObject($keyValue, $findArray = [])
     {
-        $repository                  = $this->getObjectRepository();
-        $findFunction                = 'findOneBy';
-        (!$keyValue)?: $findArray[$this->objectKey] = $keyValue;
-        $object                      = $repository->$findFunction($findArray);
+        $repository   = $this->getObjectRepository();
+        $findFunction = 'findOneBy';
+        (!$keyValue) ?: $findArray[$this->objectKey] = $keyValue;
+        $object = $repository->$findFunction($findArray);
         if (!$object) {
             throw new HttpException(404, 'No object this key (' . $keyValue . ').');
         }
@@ -205,7 +197,7 @@ abstract class AbstractController extends FOSRestController
         }
 
         if (!is_null($beforeFunction)) {
-            call_user_func($beforeFunction, $object);
+            CamelCase::fromCamelCase($beforeFunction, $object);
         }
 
         $object->Del = true;
@@ -268,6 +260,10 @@ abstract class AbstractController extends FOSRestController
 
     }
 
+    /**
+     * @deprecated deprecated since version 0.2
+     */
+    /*
     public function updateOrCreateObject($requestArray, $keyValue, $arrayRequestName = [], $arrayClass = [], $arrayField = [])
     {
         //если массивы не равны
@@ -282,6 +278,7 @@ abstract class AbstractController extends FOSRestController
 
         return $this->megaUpdateOrCreateObject($requestArray, $keyValue);
     }
+     */
 
     public function tempObject($requestArray, $arrayRequestName = [], $arrayClass = [], $arrayField = [])
     {
@@ -318,7 +315,7 @@ abstract class AbstractController extends FOSRestController
         //устанавливаем значения
         foreach ($properties as $prop) {
             $setter       = 'set' . ucfirst($prop->getName());
-            $prop_name    = $this->from_camel_case($prop->getName());
+            $prop_name    = CamelCase::fromCamelCase($prop->getName());
             $valueRequest = (isset($requestArray[$prop_name])) ? $requestArray[$prop_name] : null;//$request->get($prop->getName());
             $valueObject  = (isset($objects[$prop_name])) ? $objects[$prop_name] : null;
 
@@ -344,6 +341,10 @@ abstract class AbstractController extends FOSRestController
 
     }
 
+    /**
+     * @deprecated deprecated since version 0.2
+     */
+    /*
     public function updateObject($requestArray, $keyValue, $arrayRequestName = [], $arrayClass = [], $arrayField = [], $beforeFunction = null, $afterFunction = null)
     {
         //если массивы не равны
@@ -358,6 +359,8 @@ abstract class AbstractController extends FOSRestController
 
         return $this->megaUpdateObject($requestArray, $keyValue, $beforeFunction, $afterFunction);
     }
+     */
+
 
     /**
      *
@@ -370,7 +373,7 @@ abstract class AbstractController extends FOSRestController
      *
      * @return Object
      */
-    public function megaUpdateOrCreateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
+    public function updateOrCreateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
     {
         $em           = $this->getDoctrine()->getManager();
         $repository   = $this->getObjectRepository();
@@ -410,7 +413,7 @@ abstract class AbstractController extends FOSRestController
      *
      * @return Object
      */
-    public function megaUpdateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
+    public function updateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
     {
 
         $em           = $this->getDoctrine()->getManager();
@@ -456,17 +459,17 @@ abstract class AbstractController extends FOSRestController
             throw new HttpException(400, 'Error call method');
         }
 
-        $em = $this->getDoctrine()->getManager();
-        $reflect = new \ReflectionClass($this->objectClass);
-        $namespace = $reflect->getNamespaceName();
+        $em         = $this->getDoctrine()->getManager();
+        $reflect    = new \ReflectionClass($this->objectClass);
+        $namespace  = $reflect->getNamespaceName();
         $properties = $reflect->getProperties();
 
         if (!$object)
             $object = new $this->objectClass();
         //устанавливаем значения
         foreach ($properties as $prop) {
-            $prop_name = $this->from_camel_case($prop->getName());
-            $value = isset($requestArray[$prop_name]) ? $requestArray[$prop_name] : null;
+            $prop_name = CamelCase::fromCamelCase($prop->getName());
+            $value     = isset($requestArray[$prop_name]) ? $requestArray[$prop_name] : null;
             $prop->setAccessible(true);
             if (preg_match('/@var\s+([^\s]+)/', $prop->getDocComment(), $matches)) {
                 list(, $type) = $matches;
@@ -474,7 +477,7 @@ abstract class AbstractController extends FOSRestController
                 if (class_exists($namespace . "\\" . $type)) {
                     $type = $namespace . "\\" . $type;
                 }
-                if($type == '\DateTime' && !is_null($value)) {
+                if ($type == '\DateTime' && !is_null($value)) {
                     $value = new \DateTime($value);
                 }
                 //если свойство объекта является объектом, то проверяем его существование
@@ -487,7 +490,7 @@ abstract class AbstractController extends FOSRestController
                     }
 
                     $prop->setValue($object, $subObject);
-                } else if(!is_null($value)) {
+                } else if (!is_null($value)) {
                     $prop->setValue($object, $value);
                 }
             }

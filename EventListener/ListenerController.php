@@ -11,6 +11,7 @@ use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use WebAnt\CoreBundle\Entity\QueryLogs;
 use Doctrine\ORM\EntityManager;
+
 class ListenerController
 {
     protected $token_storage;

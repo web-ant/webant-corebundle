@@ -4,12 +4,23 @@
     "type": "symfony-bundle",
     "keywords": ["core", "symfony"],
     "license": "MIT",
+    "homepage": "http://webant.ru",
     "require": {
         "php": ">=5.3.3",
-        "friendsofsymfony/rest-bundle": "~1.4"
+        "symfony/framework-bundle": "~2.3",
+        "doctrine/orm": "~2.2,>=2.2.3,<2.5",
+        "doctrine/dbal": "<2.5",
+        "doctrine/doctrine-bundle": "~1.2",
+        "friendsofsymfony/rest-bundle": "~1.4",
+        "friendsofsymfony/user-bundle": "dev-master",
+        "jms/serializer": "~0.16",
+        "jms/serializer-bundle": "~0.13",
+        "jms/serializer": "~0.16",
+        "jms/serializer-bundle": "~0.13"
     },
     "require-dev": {
-		"phpunit/phpunit": "~4.5"
+		"phpunit/phpunit": "~4.5",
+        "liip/functional-test-bundle": "~1.0"
     },
     "autoload": {
       "psr-0": { "WebAnt\\CoreBundle": "" }
@@ -19,8 +30,15 @@
     "authors": [
         {
             "name": "Yuri Kovalev",
-            "homepage": "http://www.webant.ru",
+            "email": "u@webant.ru",
             "role": "Developer"
+        },
+        {
+            "name": "Vladimir Daron",
+            "email": "v@webant.ru",
+            "role": "Developer"
+
+
         }
     ]
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="webant-corebundle" basedir="." default="build">
+
+
+    <property name="release.dir" value="${basedir}/release" />
+    <property name="output.dir" value="${basedir}/build" />
+    <property name="test.dir" value="${output.dir}/test" />
+
+
+    <target name="build" depends="prepare,composer,parameters,lint,phploc,pdepend,phpmd-ci,phpcs-ci,phpcpd,phpdox"/>
+
+    <target name="clean" description="Deletes build artifacts">
+        <delete dir="${output.dir}"/>
+        <mkdir dir="${output.dir}"/>
+    </target>
+
+
+
+</project>
