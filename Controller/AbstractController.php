@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * This file is part of the WebAnt CoreBundle package.
+ *
+ * Yuri Kovalev <u@webant.ru>
+ * Vladimir Daron <v@webant.ru>
+ *
+ */
+
 namespace WebAnt\CoreBundle\Controller;
 
 use Doctrine\Common\Persistence\ObjectRepository;
@@ -456,9 +464,9 @@ abstract class AbstractController extends FOSRestController
             throw new HttpException(400, 'Error call method');
         }
 
-        $em = $this->getDoctrine()->getManager();
-        $reflect = new \ReflectionClass($this->objectClass);
-        $namespace = $reflect->getNamespaceName();
+        $em         = $this->getDoctrine()->getManager();
+        $reflect    = new \ReflectionClass($this->objectClass);
+        $namespace  = $reflect->getNamespaceName();
         $properties = $reflect->getProperties();
 
         if (!$object)
@@ -466,7 +474,7 @@ abstract class AbstractController extends FOSRestController
         //устанавливаем значения
         foreach ($properties as $prop) {
             $prop_name = $this->from_camel_case($prop->getName());
-            $value = isset($requestArray[$prop_name]) ? $requestArray[$prop_name] : null;
+            $value     = isset($requestArray[$prop_name]) ? $requestArray[$prop_name] : null;
             $prop->setAccessible(true);
             if (preg_match('/@var\s+([^\s]+)/', $prop->getDocComment(), $matches)) {
                 list(, $type) = $matches;
@@ -474,11 +482,9 @@ abstract class AbstractController extends FOSRestController
                 if (class_exists($namespace . "\\" . $type)) {
                     $type = $namespace . "\\" . $type;
                 }
-                if($type == '\DateTime' && !is_null($value)) {
-                    $value = new \DateTime($value);
-                }
+
                 //если свойство объекта является объектом, то проверяем его существование
-                if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
+                if (class_exists($type) && !is_null($value) && !is_object($value)) {
                     $repository   = $em->getRepository($type);
                     $findFunction = 'findOneById';
                     $subObject    = $repository->$findFunction($value);
@@ -488,6 +494,9 @@ abstract class AbstractController extends FOSRestController
 
                     $prop->setValue($object, $subObject);
                 } else if(!is_null($value)) {
+                    if($type == '/DateTime') {
+                        $value = new \DateTime($value);
+                    }
                     $prop->setValue($object, $value);
                 }
             }

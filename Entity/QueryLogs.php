@@ -1,10 +1,13 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: u.kovalev
- * Date: 15.10.15
- * Time: 19:15
+ * This file is part of the WebAnt CoreBundle package.
+ *
+ * WebAnt LTD <support@webant.ru>
+ * Developer Yuri Kovalev <u@webant.ru>
+ *
  */
+
 namespace WebAnt\CoreBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -198,7 +201,7 @@ class QueryLogs
     }
 
     /**
-     * @param \WebAnt\UserBundle\Entity\User $user
+     * @param \WebAnt\BaseBundle\Entity\User $user
      */
     public function setUser($user)
     {
@@ -206,7 +209,7 @@ class QueryLogs
     }
 
     /**
-     * @return \WebAnt\UserBundle\Entity\User
+     * @return \WebAnt\BaseBundle\Entity\User
      */
     public function getUser()
     {

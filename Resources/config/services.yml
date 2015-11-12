@@ -1,0 +1,5 @@
+services:
+    app.command.generatecrud:
+        class: WebAnt\CoreBundle\Command\GenerateCrudCommand
+        tags:
+            -  { name: console.command }
