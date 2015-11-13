@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * This file is part of the WebAnt Skeleton package.
+ *
+ * WebAnt LTD <support@webant.ru>
+ * Developer Yuri Kovalev <u@webant.ru>
+ *
+ */
+
+namespace {{ namespace }};
+
+{% block use_statements %}
+use Symfony\Component\HttpKernel\Bundle\Bundle;
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ bundle }} extends Bundle
+{% endblock class_definition %}
+{
+{% block class_body %}
+{% endblock class_body %}
+}

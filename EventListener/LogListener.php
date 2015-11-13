@@ -1,10 +1,13 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: u.kovalev
- * Date: 19.10.15
- * Time: 11:50
+ * This file is part of the WebAnt CoreBundle package.
+ *
+ * WebAnt LTD <support@webant.ru>
+ * Developer Yuri Kovalev <u@webant.ru>
+ *
  */
+
 namespace WebAnt\CoreBundle\EventListener;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
@@ -12,7 +15,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use WebAnt\CoreBundle\Entity\QueryLogs;
 use Doctrine\ORM\EntityManager;
 
-class ListenerController
+class LogListener
 {
     protected $token_storage;
     public function __construct(TokenStorageInterface $token_storage, EntityManager $em)

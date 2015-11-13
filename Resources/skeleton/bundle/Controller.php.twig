@@ -1,0 +1,128 @@
+<?php
+
+/**
+ * This file is part of the WebAnt Skeleton package.
+ *
+ * WebAnt LTD <support@webant.ru>
+ * Developer Yuri Kovalev <u@webant.ru>
+ *
+ */
+
+namespace {{ namespace }}\Controller;
+
+
+use WebAnt\CoreBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
+
+class {{ bundle_basename }}Controller extends AbstractController
+{
+    public function __construct()
+    {
+        $this->objectClass = '{{ namespace }}\Entity\{{ bundle_basename }}';
+        $this->objectKey   = 'id';
+    }
+
+    /**
+    * @ApiDoc(
+    * description="Создание {{ bundle_basename }}",
+    * section = "{{ bundle_basename }}",
+    * parameters={
+    *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
+    *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
+    * },
+    * statusCodes={
+    *         200="Успех",
+    *         400="Не все параметры"
+    *     }
+    * )
+    */
+    public function post{{ bundle_basename }}Action(Request $request)
+    {
+        $data = $this->checkJson($request);
+
+        return parent::getObjectGroup(parent::createObject($data), 'get{{ bundle_basename }}');
+    }
+
+    /**
+    * @ApiDoc(
+    * description="Изменение {{ bundle_basename }}",
+    * section = "{{ bundle_basename }}",
+    * requirements = {
+    *     {"name"="id", "dataType"="integer", "required"=true, "description"="ID {{ bundle_basename }}"}
+    * },
+    * parameters = {
+    *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
+    *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
+    * },
+    * statusCodes={
+    *         200="Успех",
+    *         400="Не все параметры",
+    *         404="Не найден объект"
+    *     }
+    * )
+    */
+    public function put{{ bundle_basename }}Action(Request $request, $id)
+    {
+        $data = $this->checkJson($request);
+
+        return parent::getObjectGroup(parent::updateObject($data, $id), 'get{{ bundle_basename }}');
+    }
+
+    /**
+    * @ApiDoc(
+    * description="Получение списка {{ bundle_basename }}s",
+    * section = "{{ bundle_basename }}",
+    * filters={
+    *         {"name"="limit", "dataType"="integer"},
+    *         {"name"="start", "dataType"="integer"},
+    *         {"name"="orderby", "dataType"="string"},
+    *         {"name"="orderbydesc", "dataType"="string"}
+    * },
+    * statusCodes={
+    *         200="Успех",
+    *     }
+    * )
+    */
+    public function get{{ bundle_basename }}sAction(Request $request)
+    {
+        return parent::getObjectGroup(parent::getListObject($request), 'get{{ bundle_basename }}');
+    }
+
+    /**
+    * @ApiDoc(
+    * description="Получение информации о {{ bundle_basename }}",
+    * section = "{{ bundle_basename }}",
+    * requirements = {
+    *     {"name"="id", "dataType"="integer", "required"=true, "description"="ID {{ bundle_basename }}"}
+    * },
+    * statusCodes={
+    *         200="Успех",
+    *         404="Объект не найден"
+    *     }
+    * )
+    */
+    public function get{{ bundle_basename }}Action($id)
+    {
+        return parent::getObjectGroup(parent::getObject($id), 'get{{ bundle_basename }}');
+    }
+
+    /**
+    * @ApiDoc(
+    * description="Удаление {{ bundle_basename }}",
+    * section = "{{ bundle_basename }}",
+    * requirements = {
+    *     {"name"="id", "dataType"="int", "required"=true, "description"="ID {{ bundle_basename }}"}
+    * },
+    * statusCodes={
+    *         200="Успех",
+    *         400="Не все параметры",
+    *         404="Не найден объект"
+    * }
+    * )
+    */
+    public function delete{{ bundle_basename }}Action($id)
+    {
+        return parent::deleteObject($id);
+    }
+}
