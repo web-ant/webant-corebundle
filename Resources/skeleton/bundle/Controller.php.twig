@@ -3,7 +3,7 @@
 /**
  * This file is part of the WebAnt Skeleton package.
  *
- * WebAnt LTD <support@webant.ru>
+ * LTD WebAnt <support@webant.ru>
  * Developer Yuri Kovalev <u@webant.ru>
  *
  */
@@ -31,6 +31,10 @@ class {{ bundle_basename }}Controller extends AbstractController
     *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
     *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
     * },
+    * output={
+    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+    *       "groups"={"get{{ bundle_basename }}"}
+    *     },
     * statusCodes={
     *         200="Успех",
     *         400="Не все параметры"
@@ -55,6 +59,10 @@ class {{ bundle_basename }}Controller extends AbstractController
     *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
     *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
     * },
+    * output={
+    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+    *       "groups"={"get{{ bundle_basename }}"}
+    *     },
     * statusCodes={
     *         200="Успех",
     *         400="Не все параметры",
@@ -79,6 +87,10 @@ class {{ bundle_basename }}Controller extends AbstractController
     *         {"name"="orderby", "dataType"="string"},
     *         {"name"="orderbydesc", "dataType"="string"}
     * },
+    * output={
+    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+    *       "groups"={"get{{ bundle_basename }}"}
+    *     },
     * statusCodes={
     *         200="Успех",
     *     }
@@ -96,6 +108,10 @@ class {{ bundle_basename }}Controller extends AbstractController
     * requirements = {
     *     {"name"="id", "dataType"="integer", "required"=true, "description"="ID {{ bundle_basename }}"}
     * },
+    * output={
+    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+    *       "groups"={"get{{ bundle_basename }}"}
+    *     },
     * statusCodes={
     *         200="Успех",
     *         404="Объект не найден"
@@ -114,6 +130,10 @@ class {{ bundle_basename }}Controller extends AbstractController
     * requirements = {
     *     {"name"="id", "dataType"="int", "required"=true, "description"="ID {{ bundle_basename }}"}
     * },
+    * output={
+    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+    *       "groups"={"get{{ bundle_basename }}"}
+    *     },
     * statusCodes={
     *         200="Успех",
     *         400="Не все параметры",

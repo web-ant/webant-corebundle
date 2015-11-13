@@ -1,12 +1,5 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: vdaron
- * Date: 13.06.15
- * Time: 11:24
- */
-
-/**
  * This file is part of the WebAnt CoreBundle package.
  *
  * Yuri Kovalev <u@webant.ru>
