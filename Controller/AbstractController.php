@@ -65,7 +65,7 @@ abstract class AbstractController extends FOSRestController
         $validator = $this->get('validator');
         $errors    = $validator->validate($entity);
         if (count($errors) > 0) {
-            throw new HttpException(400, 'Bad request (' . print_r($errors, true) . ').');
+            throw new HttpException(400, 'Bad request (' . print_r($errors->get(0)->getMessage(), true) . ').');
         }
 
         return true;
@@ -481,8 +481,12 @@ abstract class AbstractController extends FOSRestController
                     $type = $namespace . "\\" . $type;
                 }
 
+                if ($type == '\DateTime' && !is_null($value) && !is_object($value)) {
+                    $value = new \DateTime($value);
+                }
+
                 //если свойство объекта является объектом, то проверяем его существование
-                if (class_exists($type) && !is_null($value) && !is_object($value)) {
+                if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
                     $repository   = $em->getRepository($type);
                     $findFunction = 'findOneById';
                     $subObject    = $repository->$findFunction($value);
@@ -492,10 +496,6 @@ abstract class AbstractController extends FOSRestController
 
                     $prop->setValue($object, $subObject);
                 } else if (!is_null($value)) {
-                    if ($type == '\DateTime' && !is_null($value)) {
-                        $value = new \DateTime($value);
-                    }
-
                     $prop->setValue($object, $value);
                 }
             }
