@@ -1,5 +1,7 @@
 Core systems in WebAnt
 
+[Documentation](https://github.com/web-ant/webant-corebundle/blob/master/Resources/doc/index.rst)
+
 Installation
 
 ### Step 1: Install WebAntCoreBundle

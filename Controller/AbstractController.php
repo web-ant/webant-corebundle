@@ -25,6 +25,294 @@ abstract class AbstractController extends FOSRestController
     protected $objectKey = 'id';
 
     /**
+     * Создание обьекта
+     *
+     * @param  array $requestArray
+     * @return Object
+     */
+    public function createObject($requestArray)
+    {
+        $em     = $this->getDoctrine()->getManager();
+        $object = $this->arrayToObject($requestArray);
+
+        try {
+            $em->flush();
+        } catch
+        (\Exception $e) {
+            throw new HttpException(400, 'Error create: ' . $e->getMessage());
+        }
+
+        return $object;
+    }
+
+    /**
+     * Получить объект по ключу
+     *
+     * @param integer $keyValue
+     * @param array  $findArray
+     *
+     * @return Object
+     */
+    public function getObject($keyValue = FALSE, $findArray = [])
+    {
+        $repository   = $this->getObjectRepository();
+        $findFunction = 'findOneBy';
+        ($keyValue === FALSE) ?: $findArray[$this->objectKey] = $keyValue;
+        $object = $repository->$findFunction($findArray);
+        if (!$object) {
+            throw new HttpException(404, 'No object this key (' . $keyValue . ').');
+        }
+
+        return $object;
+    }
+
+    /**
+     * Получить список объектов
+     *
+     * @param Request $request   - Запрос
+     * @param array   $findArray - Массив параметров поиска
+     *
+     * @return array
+     */
+    public function getListObject(Request $request, $findArray = [])
+    {
+        $repository = $this->getObjectRepository();
+
+        $reflect    = new \ReflectionClass($this->objectClass);
+        $properties = $reflect->getProperties();
+        $orderArray = [];
+        $limit      = NULL;
+        $offset     = NULL;
+
+        foreach ($properties as $property) {
+            if ($request->query->get($property->getName(), FALSE)) {
+                $findArray[$property->getName()] = explode("|", $request->query->get($property->getName()));
+            }
+            if ($request->query->get("orderby") == $property->getName()) {
+                $orderArray[$property->getName()] = 'ASC';
+            } elseif ($request->query->get("orderbydesc") == $property->getName()) {
+                $orderArray[$property->getName()] = 'DESC';
+            }
+        }
+        if (preg_match('/^[0-9]+$/', $request->query->get("limit"))) {
+            $limit = (int)$request->query->get("limit");
+        }
+        if (
+            preg_match('/^[0-9]+$/', $request->query->get("start")) &&
+            preg_match('/^[0-9]+$/', $request->query->get("limit"))
+        ) {
+            $offset = (int)$request->query->get("start");
+        }
+
+        $objects = $repository->findBy($findArray, $orderArray, $limit, $offset);
+        if (count($objects) <= 0) {
+            $response['items'] = [];
+            $response['count'] = 0;
+
+            return $response;
+        }
+        $count           = count($objects);
+        $response['items'] = $objects;
+        $response['count'] = $count;
+
+        return $response;
+    }
+
+    /**
+     *
+     * Обновление информации об объекте
+     *
+     * @param array    $requestArray
+     * @param integer  $keyValue
+     *
+     * @return Object
+     */
+    public function updateObject($requestArray, $keyValue)
+    {
+
+        $em           = $this->getDoctrine()->getManager();
+        $repository   = $this->getObjectRepository();
+        $findFunction = 'findOneBy';
+        $object       = $repository->$findFunction($keyValue);
+
+        if (!is_object($object)) {
+            throw new HttpException(404, 'No object this key (' . $keyValue . ').');
+        }
+
+        $object = $this->arrayToObject($requestArray, $object);
+
+        try {
+            $em->flush();
+        } catch
+        (\Exception $e) {
+            throw new HttpException(400, 'Error update: ' . $e->getMessage());
+        }
+
+        return $object;
+    }
+
+    /**
+     *
+     * Метод позволяет обновить данные объекта, если объект отсутствует то создается новый
+     *
+     * @param array   $requestArray
+     * @param integer $keyValue
+     *
+     * @return Object
+     */
+    public function updateOrCreateObject($requestArray, $keyValue)
+    {
+        $em           = $this->getDoctrine()->getManager();
+        $repository   = $this->getObjectRepository();
+        $findFunction = 'findOneBy';
+        $object       = $repository->$findFunction($keyValue);
+
+        if (!is_object($object)) {
+            $object = $this->arrayToObject($requestArray);
+        } else {
+            $object = $this->arrayToObject($requestArray, $object);
+        }
+
+        try {
+            $em->flush();
+        } catch
+        (\Exception $e) {
+            throw new HttpException(400, 'Error crate or update: ' . $e->getMessage());
+        }
+
+        return $object;
+    }
+
+    /**
+     * Удалить объект
+     *
+     * @param integer $keyValue
+     *
+     * @return array
+     */
+    public function  deleteObject($keyValue)
+    {
+        $em           = $this->getDoctrine()->getManager();
+        $repository   = $this->getObjectRepository();
+        $findFunction = 'findOneBy' . ucfirst($this->objectKey);// Зачем конкатанация objectKey ?
+        $object       = $repository->$findFunction((int)$keyValue);
+
+        if (!is_object($object)) {
+            throw new HttpException(404, 'No object this key (' . $keyValue . ').');
+        }
+
+        $em->remove($object);
+
+        try {
+            $em->flush();
+        } catch (\Exception $e) {
+            throw new HttpException(409, 'Error delete: ' . $e->getMessage());
+        }
+
+        return ['ms' => 'ok'];
+    }
+
+    /**
+     * Заполнение объекта из массива
+     *
+     * @param array          $requestArray
+     * @param boolean|Object $object
+     *
+     * @return Object
+     */
+    public function arrayToObject($requestArray, $object = FALSE)
+    {
+        if (!is_array($requestArray)) {
+            throw new HttpException(400, 'Error object create');
+        }
+
+        $em         = $this->getDoctrine()->getManager();
+        $reflect    = new \ReflectionClass($this->objectClass);
+        $namespace  = $reflect->getNamespaceName();
+        $properties = $reflect->getProperties();
+
+        if (!$object)
+            $object = new $this->objectClass();
+
+        //устанавливаем значения
+        foreach ($properties as $property) {
+            $propertyName = CamelCase::fromCamelCase($property->getName());
+            $value    = isset($requestArray[$propertyName]) ? $requestArray[$propertyName] : NULL;
+            $property->setAccessible(TRUE);
+
+            if (preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
+                list(, $type) = $matches;
+
+                if (class_exists($namespace . "\\" . $type)) {
+                    $type = $namespace . "\\" . $type;
+                }
+
+                if ($type == '\DateTime' && !is_null($value) && !is_object($value)) {
+                    $value = new \DateTime($value);
+                }
+
+                // нужно проверить с arrayCollection (value = [1,2,4])
+                //если свойство объекта является объектом, то проверяем его существование
+                if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
+                    $repository   = $em->getRepository($type);
+                    $findFunction = 'findOneById';
+                    $subObject    = $repository->$findFunction($value);
+                    if (!$subObject) {
+                        throw new HttpException(400, 'Not found object (' . $type . ').');
+                    }
+
+                    $property->setValue($object, $subObject);
+                } else if (!is_null($value)) {
+                    $property->setValue($object, $value);
+                }
+            }
+        }
+        //запуск валидатора
+        $this->validate($object);
+
+        $em->persist($object);
+
+        return $object;
+    }
+
+    /**
+     * Валидация обьекта (Entity)
+     *
+     * @param Object $object
+     * @return boolean
+     */
+    protected function validate($object)
+    {
+        $validator = $this->get('validator');
+        $errors    = $validator->validate($object);
+        if (count($errors) > 0) {
+            throw new HttpException(400, 'Bad request (' . print_r($errors->get(0)->getMessage(), true) . ').');
+        }
+
+        return TRUE;
+    }
+
+    /**
+     * Получить отображание из группы $group
+     *
+     * @param object $obj
+     * @param string $group
+     *
+     * @return view
+     *
+     */
+    public function getObjectGroup($obj, $group)
+    {
+        $view    = $this->view();
+        $context = SerializationContext::create()->enableMaxDepthChecks();
+        $context->setGroups([$group]);
+        $view->setSerializationContext($context);
+        $view->setData($obj);
+
+        return $view;
+    }
+
+    /**
      * Получение репозитория
      *
      * @return ObjectRepository
@@ -44,7 +332,7 @@ abstract class AbstractController extends FOSRestController
      *
      * @param Request $request
      *
-     * @return mixed
+     * @return array
      */
     protected function checkJson(Request $request)
     {
@@ -58,452 +346,5 @@ abstract class AbstractController extends FOSRestController
         }
 
         return $data;
-    }
-
-    protected function throwErrorIfNotValid($entity)
-    {
-        $validator = $this->get('validator');
-        $errors    = $validator->validate($entity);
-        if (count($errors) > 0) {
-            throw new HttpException(400, 'Bad request (' . print_r($errors->get(0)->getMessage(), true) . ').');
-        }
-
-        return true;
-    }
-
-    /**
-     * Получить объект по ключу
-     *
-     *
-     * @param string $keyValue
-     * @param array  $findArray
-     *
-     * @return Object
-     */
-    public function getObject($keyValue, $findArray = [])
-    {
-        $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy';
-        (!$keyValue) ?: $findArray[$this->objectKey] = $keyValue;
-        $object = $repository->$findFunction($findArray);
-        if (!$object) {
-            throw new HttpException(404, 'No object this key (' . $keyValue . ').');
-        }
-
-        return $object;
-    }
-
-    /**
-     * Получить отображание из группы $group
-     *
-     *
-     * @param object $obj
-     * @param string $group
-     *
-     * @return view
-     *
-     */
-    public function getObjectGroup($obj, $group)
-    {
-        $view    = $this->view();
-        $context = SerializationContext::create()->enableMaxDepthChecks();
-        $context->setGroups([$group]);
-        $view->setSerializationContext($context);
-        $view->setData($obj);
-
-        return $view;
-    }
-
-
-    /**
-     * Получить список объектов
-     *
-     *
-     * @param Request $request   - Запрос
-     * @param array   $findArray - Массив параметров поиска
-     *
-     * @return Object
-     *
-     */
-    public function getListObject(Request $request, $findArray = [])
-    {
-        $repository = $this->getObjectRepository();
-
-        $reflect    = new \ReflectionClass($this->objectClass);
-        $properties = $reflect->getProperties();
-        $orderArray = [];
-        $limit      = null;
-        $offset     = null;
-
-        foreach ($properties as $prop) {
-            if ($request->query->get($prop->getName())) {
-                $findArray[$prop->getName()] = explode("|", $request->query->get($prop->getName()));
-            }
-            if ($request->query->get("orderby") == $prop->getName()) {
-                $orderArray[$prop->getName()] = 'ASC';
-            } elseif ($request->query->get("orderbydesc") == $prop->getName()) {
-                $orderArray[$prop->getName()] = 'DESC';
-            }
-        }
-        if (preg_match('/^[0-9]+$/', $request->query->get("limit"))) {
-            $limit = (int)$request->query->get("limit");
-        }
-        if (preg_match('/^[0-9]+$/', $request->query->get("start")) &&
-            preg_match('/^[0-9]+$/', $request->query->get("limit"))
-        ) {
-            $offset = (int)$request->query->get("start");
-        }
-
-        $objects = $repository->findBy($findArray, $orderArray, $limit, $offset);
-        if (!$objects) {
-            $object['items'] = [];
-            $object['count'] = 0;
-
-            return $object;
-        }
-        $count           = count($repository->findBy($findArray));
-        $object['items'] = $objects;
-        $object['count'] = $count;
-
-        return $object;
-    }
-
-    /**
-     * Удалить объект
-     *
-     * @param string $keyValue
-     * @param array  $arrayClass
-     * @param array  $arrayField
-     * @param array  $arrayCallBack
-     * @param null   $beforeFunction
-     * @param null   $afterFunction
-     *
-     * @return array
-     */
-    public function  deleteObject($keyValue, $arrayClass = [], $arrayField = [], $arrayCallBack = [], $beforeFunction = null, $afterFunction = null)
-    {
-        //если массивы не равны
-        if (!(sizeof($arrayClass) === sizeof($arrayField) && sizeof($arrayClass) === sizeof($arrayCallBack))
-        ) {
-            throw new HttpException(400, 'Error');
-        }
-
-        $em           = $this->getDoctrine()->getManager();
-        $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
-        $object       = $repository->$findFunction($keyValue);
-
-        if (!$object) {
-            throw new HttpException(404, 'Objects not found');
-        }
-
-        if (!is_null($beforeFunction)) {
-            CamelCase::fromCamelCase($beforeFunction, $object);
-        }
-
-        $object->Del = true;
-
-        //ищем зависимые объекты
-        $count_class = count($arrayClass);
-        for ($i = 0; $i < $count_class; $i++) {
-            $items = $em->getRepository($arrayClass[$i])->findBy([$arrayField[$i] => $keyValue]);
-            if ($items) {
-                $callBack = $arrayCallBack[$i];
-                foreach ($items as $item) {
-                    call_user_func($callBack, $em, $item, $object);
-                }
-            }
-        }
-
-        if ($object->Del) {
-            $em->remove($object);
-        }
-
-        try {
-            $em->flush();
-            if (!is_null($afterFunction)) {
-                call_user_func($afterFunction);
-            }
-        } catch
-        (\Exception $e) {
-            throw new HttpException(409, 'Error with Database ' . $e->getMessage());
-        }
-
-        return ['ms' => 'ok'];
-    }
-
-    public function createObject($requestArray, $arrayRequestName = [], $arrayClass = [], $arrayField = [])
-    {
-
-
-        //если массивы не равны
-        if (!(sizeof($arrayRequestName) === sizeof($arrayClass) && sizeof($arrayClass) === sizeof($arrayField))) {
-            throw new HttpException(400, 'Error');
-        }
-
-        for ($i = 0; $i < count($arrayRequestName); $i++) {
-            $requestArray[$arrayField[$i]] = $requestArray[$arrayRequestName[$i]];
-            unset($requestArray[$arrayRequestName[$i]]);
-        }
-
-        $em     = $this->getDoctrine()->getManager();
-        $object = $this->arrayToObject($requestArray);
-
-        try {
-            $em->flush();
-        } catch
-        (\Exception $e) {
-
-            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
-        }
-
-        return $object;
-
-    }
-
-    /**
-     * @deprecated deprecated since version 0.2
-     */
-    /*
-    public function updateOrCreateObject($requestArray, $keyValue, $arrayRequestName = [], $arrayClass = [], $arrayField = [])
-    {
-        //если массивы не равны
-        if (!(sizeof($arrayRequestName) === sizeof($arrayClass) && sizeof($arrayClass) === sizeof($arrayField))) {
-            throw new HttpException(400, 'Error');
-        }
-
-        for ($i = 0; $i < count($arrayRequestName); $i++) {
-            $requestArray[$arrayField[$i]] = $requestArray[$arrayRequestName[$i]];
-            unset($requestArray[$arrayRequestName[$i]]);
-        }
-
-        return $this->megaUpdateOrCreateObject($requestArray, $keyValue);
-    }
-     */
-
-    public function tempObject($requestArray, $arrayRequestName = [], $arrayClass = [], $arrayField = [])
-    {
-        $em = $this->getDoctrine()->getManager();
-        //если массивы не равны
-        if (!(sizeof($arrayRequestName) === sizeof($arrayClass) && sizeof($arrayClass) === sizeof($arrayField))) {
-            throw new HttpException(400, 'Error');
-        }
-
-
-        $reflect    = new \ReflectionClass($this->objectClass);
-        $properties = $reflect->getProperties();
-        $object     = new $this->objectClass();
-
-        //проверяем существование зависимых объектов
-        for ($i = 0; $i < sizeof($arrayRequestName); $i++) {
-            if (isset($requestArray[$arrayRequestName[$i]])) {
-                if ($requestArray[$arrayRequestName[$i]] == 0) {
-                    $objects[$arrayField[$i]] = 0;
-                } else if (isset($requestArray[$arrayRequestName[$i]])) {
-                    $repository   = $em->getRepository($arrayClass[$i]);
-                    $findFunction = 'findOneById';
-                    $subObject    = $repository->$findFunction($requestArray[$arrayRequestName[$i]]);
-
-                    if (!$subObject) {
-                        throw new HttpException(400, 'No object (' . $arrayField[$i] . ').');
-                    }
-
-                    $objects[$arrayField[$i]] = $subObject;
-                }
-            }
-        }
-
-        //устанавливаем значения
-        foreach ($properties as $prop) {
-            $setter       = 'set' . ucfirst($prop->getName());
-            $prop_name    = CamelCase::fromCamelCase($prop->getName());
-            $valueRequest = (isset($requestArray[$prop_name])) ? $requestArray[$prop_name] : null;//$request->get($prop->getName());
-            $valueObject  = (isset($objects[$prop_name])) ? $objects[$prop_name] : null;
-
-
-            if (isset($valueObject) && $reflect->hasMethod($setter)) {
-                if ($valueObject === 0) {
-                    $object->$setter(null);
-                } else {
-                    $object->$setter($valueObject);
-                }
-            } else if (isset($valueRequest) && $reflect->hasMethod($setter) && !in_array($prop->getName(), $arrayField)
-            ) {
-                $object->$setter($valueRequest);
-            }
-        }
-
-        //запуск валидатора
-        $this->throwErrorIfNotValid($object);
-
-        $em->persist($object);
-
-        return $object;
-
-    }
-
-    /**
-     * @deprecated deprecated since version 0.2
-     */
-    /*
-    public function updateObject($requestArray, $keyValue, $arrayRequestName = [], $arrayClass = [], $arrayField = [], $beforeFunction = null, $afterFunction = null)
-    {
-        //если массивы не равны
-        if (!(sizeof($arrayRequestName) === sizeof($arrayClass) && sizeof($arrayClass) === sizeof($arrayField))) {
-            throw new HttpException(400, 'Error');
-        }
-
-        for ($i = 0; $i < count($arrayRequestName); $i++) {
-            $requestArray[$arrayField[$i]] = $requestArray[$arrayRequestName[$i]];
-            unset($requestArray[$arrayRequestName[$i]]);
-        }
-
-        return $this->megaUpdateObject($requestArray, $keyValue, $beforeFunction, $afterFunction);
-    }
-     */
-
-
-    /**
-     *
-     * Метод позволяет обновить данные объекта, если объект отсутствует то создается новый
-     *
-     * @param      $requestArray
-     * @param      $keyValue
-     * @param null $beforeFunction
-     * @param null $afterFunction
-     *
-     * @return Object
-     */
-    public function updateOrCreateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
-    {
-        $em           = $this->getDoctrine()->getManager();
-        $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
-        $object       = $repository->$findFunction($keyValue);
-
-        if (!is_null($beforeFunction)) {
-            call_user_func($beforeFunction, $object);
-        }
-        if (!isset($object)) {
-            $object = $this->arrayToObject($requestArray);
-        } else {
-            $object = $this->arrayToObject($requestArray, $object);
-        }
-
-        try {
-            $em->flush();
-            if (!is_null($afterFunction)) {
-                call_user_func($afterFunction);
-            }
-        } catch
-        (\Exception $e) {
-            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
-        }
-
-        return $object;
-    }
-
-    /**
-     *
-     * Обновление информации об объекте
-     *
-     * @param Array    $requestArray
-     * @param integer  $keyValue
-     * @param callback $beforeFunction
-     * @param callback $afterFunction
-     *
-     * @return Object
-     */
-    public function updateObject($requestArray, $keyValue, $beforeFunction = null, $afterFunction = null)
-    {
-
-        $em           = $this->getDoctrine()->getManager();
-        $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
-        $object       = $repository->$findFunction($keyValue);
-
-        if (!isset($object)) {
-            throw new HttpException(404, 'No object this key (' . $keyValue . ').');
-        }
-
-        if (!is_null($beforeFunction)) {
-            call_user_func($beforeFunction, $object);
-        }
-
-        $object = $this->arrayToObject($requestArray, $object);
-
-        try {
-            $em->flush();
-            if (!is_null($afterFunction)) {
-                call_user_func($afterFunction);
-            }
-        } catch
-        (\Exception $e) {
-            throw new HttpException(400, 'Error with Database ' . $e->getMessage());
-        }
-
-        return $object;
-    }
-
-    /**
-     *
-     * Заполнение объекта из массива
-     *
-     * @param Array       $requestArray
-     * @param bool|Object $object
-     *
-     * @return Object
-     */
-    public function arrayToObject($requestArray, $object = false)
-    {
-        if (!is_array($requestArray)) {
-            throw new HttpException(400, 'Error call method');
-        }
-
-        $em         = $this->getDoctrine()->getManager();
-        $reflect    = new \ReflectionClass($this->objectClass);
-        $namespace  = $reflect->getNamespaceName();
-        $properties = $reflect->getProperties();
-
-        if (!$object)
-            $object = new $this->objectClass();
-
-        //устанавливаем значения
-        foreach ($properties as $prop) {
-            $propName = CamelCase::fromCamelCase($prop->getName());
-            $value    = isset($requestArray[$propName]) ? $requestArray[$propName] : null;
-            $prop->setAccessible(true);
-
-            if (preg_match('/@var\s+([^\s]+)/', $prop->getDocComment(), $matches)) {
-                list(, $type) = $matches;
-
-                if (class_exists($namespace . "\\" . $type)) {
-                    $type = $namespace . "\\" . $type;
-                }
-
-                if ($type == '\DateTime' && !is_null($value) && !is_object($value)) {
-                    $value = new \DateTime($value);
-                }
-
-                //если свойство объекта является объектом, то проверяем его существование
-                if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
-                    $repository   = $em->getRepository($type);
-                    $findFunction = 'findOneById';
-                    $subObject    = $repository->$findFunction($value);
-                    if (!$subObject) {
-                        throw new HttpException(400, 'No object (' . $type . ').');
-                    }
-
-                    $prop->setValue($object, $subObject);
-                } else if (!is_null($value)) {
-                    $prop->setValue($object, $value);
-                }
-            }
-        }
-        //запуск валидатора
-        $this->throwErrorIfNotValid($object);
-        $em->persist($object);
-
-        return $object;
     }
 }
