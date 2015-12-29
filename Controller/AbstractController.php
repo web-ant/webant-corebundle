@@ -127,12 +127,17 @@ abstract class AbstractController extends FOSRestController
      *
      * @return Object
      */
-    public function updateObject($requestArray, $keyValue)
+    public function updateObject(
+        $requestArray,
+        $keyValue,
+        $beforeFunction = null,
+        $afterFunction = null
+    )
     {
 
         $em           = $this->getDoctrine()->getManager();
         $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy';
+        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
         $object       = $repository->$findFunction($keyValue);
 
         if (!is_object($object)) {
@@ -141,8 +146,18 @@ abstract class AbstractController extends FOSRestController
 
         $object = $this->arrayToObject($requestArray, $object);
 
+        if (!is_null($beforeFunction)) {
+            call_user_func($beforeFunction, $object);
+        }
+
+        $em->remove($object);
+
         try {
             $em->flush();
+
+            if (!is_null($afterFunction)) {
+                call_user_func($afterFunction, $object);
+            }
         } catch
         (\Exception $e) {
             throw new HttpException(400, 'Error update: ' . $e->getMessage());
@@ -160,14 +175,23 @@ abstract class AbstractController extends FOSRestController
      *
      * @return Object
      */
-    public function updateOrCreateObject($requestArray, $keyValue)
+    public function updateOrCreateObject(
+        $requestArray,
+        $keyValue,
+        $beforeFunction = NULL,
+        $afterFunction = NULL
+    )
     {
         $em           = $this->getDoctrine()->getManager();
         $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy';
+        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
         $object       = $repository->$findFunction($keyValue);
 
-        if (!is_object($object)) {
+        if (!is_null($beforeFunction)) {
+            call_user_func($beforeFunction, $object);
+        }
+
+        if (!isset($object)) {
             $object = $this->arrayToObject($requestArray);
         } else {
             $object = $this->arrayToObject($requestArray, $object);
@@ -175,6 +199,10 @@ abstract class AbstractController extends FOSRestController
 
         try {
             $em->flush();
+
+            if (!is_null($afterFunction)) {
+                call_user_func($afterFunction, $object);
+            }
         } catch
         (\Exception $e) {
             throw new HttpException(400, 'Error crate or update: ' . $e->getMessage());
@@ -190,7 +218,14 @@ abstract class AbstractController extends FOSRestController
      *
      * @return array
      */
-    public function  deleteObject($keyValue)
+    public function  deleteObject(
+        $keyValue,
+        $arrayClass = [],
+        $arrayField = [],
+        $arrayCallBack = [],
+        $beforeFunction = null,
+        $afterFunction = null
+    )
     {
         $em           = $this->getDoctrine()->getManager();
         $repository   = $this->getObjectRepository();
@@ -200,11 +235,33 @@ abstract class AbstractController extends FOSRestController
         if (!is_object($object)) {
             throw new HttpException(404, 'No object this key (' . $keyValue . ').');
         }
+        if (!is_null($beforeFunction)) {
+            call_user_func($beforeFunction, $object);
+        }
+        $object->Del = true;
 
-        $em->remove($object);
+        //ищем зависимые объекты
+        $count_class = count($arrayClass);
+        for ($i = 0; $i < $count_class; $i++) {
+            $items = $em->getRepository($arrayClass[$i])->findBy([$arrayField[$i] => $keyValue]);
+            if ($items) {
+                $callBack = $arrayCallBack[$i];
+                foreach ($items as $item) {
+                    call_user_func($callBack, $em, $item, $object);
+                }
+            }
+        }
+
+        if ($object->Del) {
+            $em->remove($object);
+        }
 
         try {
             $em->flush();
+
+            if (!is_null($afterFunction)) {
+                call_user_func($afterFunction);
+            }
         } catch (\Exception $e) {
             throw new HttpException(409, 'Error delete: ' . $e->getMessage());
         }
@@ -231,8 +288,9 @@ abstract class AbstractController extends FOSRestController
         $namespace  = $reflect->getNamespaceName();
         $properties = $reflect->getProperties();
 
-        if (!$object)
+        if ($object === FALSE) {
             $object = new $this->objectClass();
+        }
 
         //устанавливаем значения
         foreach ($properties as $property) {
@@ -276,6 +334,19 @@ abstract class AbstractController extends FOSRestController
     }
 
     /**
+     * @deprecated deprecated since version 1.5
+     *
+     * Заполнение обьекта из массива
+     *
+     * @param $requestArray
+     * @return Object
+     */
+    public function tempObject($requestArray)
+    {
+        return $this->arrayToObject($requestArray);
+    }
+
+    /**
      * Валидация обьекта (Entity)
      *
      * @param Object $object
@@ -295,19 +366,19 @@ abstract class AbstractController extends FOSRestController
     /**
      * Получить отображание из группы $group
      *
-     * @param object $obj
+     * @param object $object
      * @param string $group
      *
      * @return view
      *
      */
-    public function getObjectGroup($obj, $group)
+    public function getObjectGroup($object, $group)
     {
         $view    = $this->view();
         $context = SerializationContext::create()->enableMaxDepthChecks();
         $context->setGroups([$group]);
         $view->setSerializationContext($context);
-        $view->setData($obj);
+        $view->setData($object);
 
         return $view;
     }
