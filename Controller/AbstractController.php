@@ -27,8 +27,9 @@ abstract class AbstractController extends FOSRestController
     /**
      * Создание обьекта
      *
-     * @param  array $requestArray
-     * @return Object
+     * @param   array   $requestArray
+     *
+     * @return  Object
      */
     public function createObject($requestArray)
     {
@@ -48,10 +49,10 @@ abstract class AbstractController extends FOSRestController
     /**
      * Получить объект по ключу
      *
-     * @param integer $keyValue
-     * @param array  $findArray
+     * @param   integer $keyValue
+     * @param   array   $findArray
      *
-     * @return Object
+     * @return  Object
      */
     public function getObject($keyValue = FALSE, $findArray = [])
     {
@@ -69,10 +70,10 @@ abstract class AbstractController extends FOSRestController
     /**
      * Получить список объектов
      *
-     * @param Request $request   - Запрос
-     * @param array   $findArray - Массив параметров поиска
+     * @param   Request $request   - Запрос
+     * @param   array   $findArray - Массив параметров поиска
      *
-     * @return array
+     * @return  array
      */
     public function getListObject(Request $request, $findArray = [])
     {
@@ -119,13 +120,16 @@ abstract class AbstractController extends FOSRestController
     }
 
     /**
+     * Обновление обьекта
      *
-     * Обновление информации об объекте
-     *
-     * @param array    $requestArray
-     * @param integer  $keyValue
+     * @param $requestArray
+     * @param $keyValue
+     * @param null $beforeFunction
+     * @param null $afterFunction
      *
      * @return Object
+     *
+     * @throws HttpException
      */
     public function updateObject(
         $requestArray,
@@ -150,8 +154,6 @@ abstract class AbstractController extends FOSRestController
             call_user_func($beforeFunction, $object);
         }
 
-        $em->remove($object);
-
         try {
             $em->flush();
 
@@ -167,13 +169,16 @@ abstract class AbstractController extends FOSRestController
     }
 
     /**
+     * Обновление или создание обьекта
      *
-     * Метод позволяет обновить данные объекта, если объект отсутствует то создается новый
-     *
-     * @param array   $requestArray
-     * @param integer $keyValue
+     * @param $requestArray
+     * @param $keyValue
+     * @param null $beforeFunction
+     * @param null $afterFunction
      *
      * @return Object
+     *
+     * @throws HttpException
      */
     public function updateOrCreateObject(
         $requestArray,
@@ -191,7 +196,7 @@ abstract class AbstractController extends FOSRestController
             call_user_func($beforeFunction, $object);
         }
 
-        if (!isset($object)) {
+        if (!is_object($object)) {
             $object = $this->arrayToObject($requestArray);
         } else {
             $object = $this->arrayToObject($requestArray, $object);
@@ -205,26 +210,33 @@ abstract class AbstractController extends FOSRestController
             }
         } catch
         (\Exception $e) {
-            throw new HttpException(400, 'Error crate or update: ' . $e->getMessage());
+            throw new HttpException(400, 'Error create or update: ' . $e->getMessage());
         }
 
         return $object;
     }
 
     /**
-     * Удалить объект
+     * Удаление обьекта
      *
-     * @param integer $keyValue
+     * @param   $keyValue
+     * @param   array   $arrayClass
+     * @param   array   $arrayField
+     * @param   array   $arrayCallBack
+     * @param   null    $beforeFunction
+     * @param   null    $afterFunction
      *
-     * @return array
+     * @return  array
+     *
+     * @throws  \HttpException
      */
     public function  deleteObject(
         $keyValue,
         $arrayClass = [],
         $arrayField = [],
         $arrayCallBack = [],
-        $beforeFunction = null,
-        $afterFunction = null
+        $beforeFunction = NULL,
+        $afterFunction = NULL
     )
     {
         $em           = $this->getDoctrine()->getManager();
@@ -238,22 +250,24 @@ abstract class AbstractController extends FOSRestController
         if (!is_null($beforeFunction)) {
             call_user_func($beforeFunction, $object);
         }
-        $object->Del = true;
+        $object->Del = TRUE;
 
         //ищем зависимые объекты
-        $count_class = count($arrayClass);
-        for ($i = 0; $i < $count_class; $i++) {
+        $countClass = count($arrayClass);
+        for ($i = 0; $i < $countClass; $i++) {
             $items = $em->getRepository($arrayClass[$i])->findBy([$arrayField[$i] => $keyValue]);
-            if ($items) {
-                $callBack = $arrayCallBack[$i];
+            if (count($items) > 0) {
+                $callBackFunction = $arrayCallBack[$i];
                 foreach ($items as $item) {
-                    call_user_func($callBack, $em, $item, $object);
+                    call_user_func($callBackFunction, $em, $item, $object);
                 }
             }
         }
 
         if ($object->Del) {
             $em->remove($object);
+        } else {
+            throw new \HttpException(423, 'Deleting canceled');
         }
 
         try {
@@ -272,10 +286,10 @@ abstract class AbstractController extends FOSRestController
     /**
      * Заполнение объекта из массива
      *
-     * @param array          $requestArray
-     * @param boolean|Object $object
+     * @param   array           $requestArray
+     * @param   boolean|Object  $object
      *
-     * @return Object
+     * @return  Object
      */
     public function arrayToObject($requestArray, $object = FALSE)
     {
@@ -301,6 +315,11 @@ abstract class AbstractController extends FOSRestController
             if (preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
                 list(, $type) = $matches;
 
+                $arrayCollection = NULL;
+                if(preg_match('/@todo\s+([^\s]+)/', $property->getDocComment(), $todo)) {
+                    list(, $arrayCollection) = $matches;
+                }
+
                 if (class_exists($namespace . "\\" . $type)) {
                     $type = $namespace . "\\" . $type;
                 }
@@ -309,19 +328,50 @@ abstract class AbstractController extends FOSRestController
                     $value = new \DateTime($value);
                 }
 
-                // нужно проверить с arrayCollection (value = [1,2,4])
-                //если свойство объекта является объектом, то проверяем его существование
-                if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
-                    $repository   = $em->getRepository($type);
-                    $findFunction = 'findOneById';
-                    $subObject    = $repository->$findFunction($value);
-                    if (!$subObject) {
-                        throw new HttpException(400, 'Not found object (' . $type . ').');
-                    }
+                /**
+                 * Для каждого property который указан как ArrayCollection
+                 * должен быть setter который вызывается с массивом объектов в качестве параметра
+                 */
+                if(!is_null($arrayCollection) && is_array($value) && count($value) > 0) {
+                    $targetReflect    = new \ReflectionClass($type);
+                    $targetProperties = $targetReflect->getProperties();
+                    // ищем нужное property
+                    foreach($targetProperties as $targetProperty) {
+                        if(preg_match('/@var\s+([^\s]+)/', $targetProperty->getDocComment(), $ownerMatches)) {
+                            $ownerType = $ownerMatches[1];
+                            if($ownerType == '\\' . $reflect->getName()) {
+                                $this->objectClass = $type;
+                                $targetSetterName = ucfirst($property->getName());
 
-                    $property->setValue($object, $subObject);
-                } else if (!is_null($value)) {
-                    $property->setValue($object, $value);
+                                //заполняем массив объектами
+                                $itemsObjects = [];
+                                foreach($value as $itemId) {
+                                    $itemsObjects[] = $this->getObject($itemId);
+                                }
+                                try {
+                                    // вызываем setter
+                                    $method = $reflect->getMethod('set' . $targetSetterName);
+                                    $method->invoke($object, $itemsObjects);
+                                } catch(\ReflectionException $e) {
+                                    throw new HttpException(400, 'Mistake when filling object');
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    //если свойство объекта является объектом, то проверяем его существование
+                    if (class_exists($type) && !is_null($value) && $value != [] && !is_object($value)) {
+                        $repository   = $em->getRepository($type);
+                        $findFunction = 'findOneById';
+                        $subObject    = $repository->$findFunction($value);
+                        if (!$subObject) {
+                            throw new HttpException(400, 'Not found object (' . $type . ').');
+                        }
+
+                        $property->setValue($object, $subObject);
+                    } else if (!is_null($value)) {
+                        $property->setValue($object, $value);
+                    }
                 }
             }
         }
@@ -334,12 +384,12 @@ abstract class AbstractController extends FOSRestController
     }
 
     /**
-     * @deprecated deprecated since version 1.5
+     * @deprecated deprecated since version 2
      *
-     * Заполнение обьекта из массива
+     * Заполнение временного обьекта из массива
      *
-     * @param $requestArray
-     * @return Object
+     * @param   $requestArray
+     * @return  Object
      */
     public function tempObject($requestArray)
     {
@@ -349,15 +399,15 @@ abstract class AbstractController extends FOSRestController
     /**
      * Валидация обьекта (Entity)
      *
-     * @param Object $object
-     * @return boolean
+     * @param   Object $object
+     * @return  boolean
      */
     protected function validate($object)
     {
         $validator = $this->get('validator');
         $errors    = $validator->validate($object);
         if (count($errors) > 0) {
-            throw new HttpException(400, 'Bad request (' . print_r($errors->get(0)->getMessage(), true) . ').');
+            throw new HttpException(400, 'Bad request (' . print_r($errors->get(0)->getMessage(), TRUE) . ').');
         }
 
         return TRUE;
@@ -366,10 +416,10 @@ abstract class AbstractController extends FOSRestController
     /**
      * Получить отображание из группы $group
      *
-     * @param object $object
-     * @param string $group
+     * @param   object $object
+     * @param   string $group
      *
-     * @return view
+     * @return  view
      *
      */
     public function getObjectGroup($object, $group)
@@ -386,7 +436,7 @@ abstract class AbstractController extends FOSRestController
     /**
      * Получение репозитория
      *
-     * @return ObjectRepository
+     * @return  ObjectRepository
      */
     protected function getObjectRepository()
     {
@@ -401,16 +451,16 @@ abstract class AbstractController extends FOSRestController
     /**
      * Проверка на валидность JSON
      *
-     * @param Request $request
+     * @param   Request $request
      *
-     * @return array
+     * @return  array
      */
     protected function checkJson(Request $request)
     {
         if ('json' !== $request->getContentType()) {
             throw new HttpException(400, 'Invalid content type');
         }
-        $data = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), TRUE);
 
         if (json_last_error() !== JSON_ERROR_NONE || $request->getContent() == '') {
             throw new HttpException(400, 'Invalid content type');

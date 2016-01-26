@@ -29,81 +29,81 @@ class {{ bundle_basename }} {
         $this->dateCreate = new \DateTime();
     }
     /**
-    * @ORM\Id
-    * @ORM\Column(type="integer")
-    * @ORM\GeneratedValue(strategy="AUTO")
-    * @Groups({"get{{ bundle_basename }}"})
-    */
+     * @ORM\Id
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="AUTO")
+     * @Groups({"get{{ bundle_basename }}"})
+     */
     protected $id;
 
     /**
-    * @var /DateTime
-    *
-    * @ORM\Column(name="date_create", type="datetime")
-    */
+     * @var /DateTime
+     *
+     * @ORM\Column(name="date_create", type="datetime")
+     */
     private $dateCreate;
 
     /**
-    * @var string
-    *
-    * @ORM\Column(name="name", type="string", length=45, nullable=false)
-    * @Groups({"get{{ bundle_basename }}"})
-    */
+     * @var string
+     *
+     * @ORM\Column(name="name", type="string", length=45, nullable=false)
+     * @Groups({"get{{ bundle_basename }}"})
+     */
     protected $name;
 
     /**
-    * @var string
-    *
-    * @ORM\Column(name="description", type="string", nullable=false)
-    * @Groups({"get{{ bundle_basename }}"})
-    */
+     * @var string
+     *
+     * @ORM\Column(name="description", type="string", nullable=false)
+     * @Groups({"get{{ bundle_basename }}"})
+     */
     protected $description;
 
     /**
-    * @return mixed
-    */
+     * @return mixed
+     */
     public function getId()
     {
-    return $this->id;
+        return $this->id;
     }
 
     /**
-    * @param mixed $id
-    */
+     * @param mixed $id
+     */
     public function setId($id)
     {
-    $this->id = $id;
+        $this->id = $id;
     }
 
     /**
-    * @return string
-    */
+     * @return string
+     */
     public function getName()
     {
-    return $this->name;
+        return $this->name;
     }
 
     /**
-    * @param string $name
-    */
+     * @param string $name
+     */
     public function setName($name)
     {
-    $this->name = $name;
+        $this->name = $name;
     }
 
     /**
-    * @return string
-    */
+     * @return string
+     */
     public function getDescription()
     {
-    return $this->description;
+        return $this->description;
     }
 
     /**
-    * @param string $description
-    */
+     * @param string $description
+     */
     public function setDescription($description)
     {
-    $this->description = $description;
+        $this->description = $description;
     }
 }

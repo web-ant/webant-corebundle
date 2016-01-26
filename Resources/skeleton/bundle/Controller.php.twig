@@ -24,22 +24,22 @@ class {{ bundle_basename }}Controller extends AbstractController
     }
 
     /**
-    * @ApiDoc(
-    * description="Создание {{ bundle_basename }}",
-    * section = "{{ bundle_basename }}",
-    * parameters={
-    *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
-    *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
-    * },
-    * output={
-    *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
-    *       "groups"={"get{{ bundle_basename }}"}
-    *     },
-    * statusCodes={
-    *         200="Успех",
-    *         400="Не все параметры"
-    *     }
-    * )
+     * @ApiDoc(
+     * description="Создание {{ bundle_basename }}",
+     * section = "{{ bundle_basename }}",
+     * parameters={
+     *     {"name"="name", "dataType"="string", "required"=true, "description"="Название {{ bundle_basename }}"},
+     *     {"name"="description", "dataType"="string", "required"=true, "description"="Описание {{ bundle_basename }}"},
+     * },
+     * output={
+     *       "class"="{{ namespace }}\Entity\{{ bundle_basename }}",
+     *       "groups"={"get{{ bundle_basename }}"}
+     *     },
+     * statusCodes={
+     *         200="Успех",
+     *         400="Не все параметры"
+     *     }
+     * )
     */
     public function post{{ bundle_basename }}Action(Request $request)
     {
