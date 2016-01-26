@@ -6,9 +6,10 @@
  * Time: 12:28 AM
  */
 
-namespace WebAnt\CoreBundle\Tests\Controller;
+namespace WebAnt\ClientBundle\Tests;
 
 use Liip\FunctionalTestBundle\Test\WebTestCase;
+use Nelmio\Alice\Fixtures;
 
 abstract class RestWebTestCase extends WebTestCase
 {
@@ -18,18 +19,18 @@ abstract class RestWebTestCase extends WebTestCase
      */
     protected $client;
 
-    /*
+    /**
      * @var
      */
-    protected $limit;
+    protected $firstEntity;
 
     /**
-     * @var ArrayCollection
+     * @var array
      */
-    protected $entityCollection;
+    protected $entityCollection = [];
 
     /**
-     *
+     * @var array
      */
     protected $entityValue;
 
@@ -39,33 +40,29 @@ abstract class RestWebTestCase extends WebTestCase
     protected $className;
 
     /**
-     * @var array Fixture classes to load on setup
+     * @var array Alice fixture files to load on setup
      */
-    protected $fixtures = array();
+    protected $fixtureFiles = [];
 
     public function setUp()
     {
-        $this->client = static::createClient();
+        $this->client           = static::createClient();
+        $this->entityCollection = $this->loadFixtureFiles($this->getFixtures());
 
-        $this->getContainer()->get('doctrine')->getManager()->getConnection()
-             ->query(sprintf('SET FOREIGN_KEY_CHECKS=0'));
-        $this->loadFixtures($this->getFixtures());
-        $this->getContainer()->get('doctrine')->getManager()->getConnection()
-             ->query(sprintf('SET FOREIGN_KEY_CHECKS=1'));
 
-        $lastFixturs = $this->getFixtures()[count($this->getFixtures()) - 1];
-
-        $this->entityCollection = $lastFixturs::$collection;
-        foreach ($this->entityCollection->getValues() as $obj) {
+        foreach ($this->entityCollection as $obj) {
             $this->entityValue[get_class($obj)][] = $obj;
         }
-        $this->limit = count($this->entityValue[$this->className]);
+
+        if(!empty($this->className) && !empty($this->entityValue[$this->className])){
+            $this->firstEntity = $this->entityValue[$this->className][0];
+        }
 
     }
 
     public function getFixtures()
     {
-        return $this->fixtures;
+        return $this->fixtureFiles;
     }
 
     protected function assertJsonResponse($response, $statusCode = 200)
@@ -82,6 +79,7 @@ abstract class RestWebTestCase extends WebTestCase
 
     /**
      * Стандартный тест проверки rest api
+     *
      * @param       $url
      * @param       $method
      * @param array $param
@@ -90,7 +88,7 @@ abstract class RestWebTestCase extends WebTestCase
      *
      * @return mixed
      */
-    protected function JsonRequestTest($url, $method, $param = array(), $code = 200, $obj = null)
+    protected function JsonRequestTest($url, $method, $param = [], $code = 200, $obj = null)
     {
         $route = $this->getUrl($url, $param);
 
@@ -98,9 +96,9 @@ abstract class RestWebTestCase extends WebTestCase
             $this->client->request($method, $route);
 
         } else {
-            $this->client->request($method, $route, array(),
-                array(),
-                array('CONTENT_TYPE' => 'application/json'),
+            $this->client->request($method, $route, [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
                 json_encode($obj));
         }
         $response = $this->client->getResponse();
@@ -119,22 +117,22 @@ abstract class RestWebTestCase extends WebTestCase
      *
      * @return mixed
      */
-    protected function getTest($url, $param = array(), $code = 200)
+    protected function getTest($url, $param = [], $code = 200)
     {
         return $this->JsonRequestTest($url, "GET", $param, $code);
     }
 
-    protected function delTest($url, $param = array(), $code = 200)
+    protected function delTest($url, $param = [], $code = 200)
     {
         return $this->JsonRequestTest($url, "DELETE", $param, $code);
     }
 
-    protected function postTest($url, $obj, $param = array(), $code = 200)
+    protected function postTest($url, $obj, $param = [], $code = 200)
     {
         return $this->JsonRequestTest($url, "POST", $param, $code, $obj);
     }
 
-    protected function putTest($url, $obj, $param = array(), $code = 200)
+    protected function putTest($url, $obj, $param = [], $code = 200)
     {
         return $this->JsonRequestTest($url, "PUT", $param, $code, $obj);
     }
