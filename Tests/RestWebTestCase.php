@@ -6,7 +6,7 @@
  * Time: 12:28 AM
  */
 
-namespace WebAnt\ClientBundle\Tests;
+namespace WebAnt\CoreBundle\Tests;
 
 use Liip\FunctionalTestBundle\Test\WebTestCase;
 use Nelmio\Alice\Fixtures;
