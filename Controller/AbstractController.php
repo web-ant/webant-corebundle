@@ -189,8 +189,14 @@ abstract class AbstractController extends FOSRestController
     {
         $em           = $this->getDoctrine()->getManager();
         $repository   = $this->getObjectRepository();
-        $findFunction = 'findOneBy' . ucfirst($this->objectKey);
-        $object       = $repository->$findFunction($keyValue);
+
+        if(is_string($this->objectKey)){
+            $findFunction = 'findOneBy' . ucfirst($this->objectKey);
+            $object       = $repository->$findFunction($keyValue);
+        } else if(is_array($this->objectKey)){
+            // @from http://stackoverflow.com/a/21524085/6076531
+            $object = $repository->findOneBy($this->objectKey);
+        }
 
         if (!is_null($beforeFunction)) {
             call_user_func($beforeFunction, $object);
