@@ -85,14 +85,39 @@ abstract class AbstractController extends FOSRestController
         $limit      = null;
         $offset     = null;
 
-        foreach ($properties as $property) {
-            if ($request->query->get($property->getName(), false)) {
-                $findArray[$property->getName()] = explode("|", $request->query->get($property->getName()));
+        $em         = $this->getDoctrine()->getManager();
+        $countQuery = $em->createQueryBuilder();
+        $countQuery->select('count(x) as num');
+        $countQuery->from($this->objectClass, 'x');
+
+
+        // append find from $findArray to countQuery
+        foreach ($findArray as $key => $value) {
+            if(is_array($value)){
+                $countQuery->andWhere("x.$key IN(:$key)");
+            } else {
+                $countQuery->andWhere("x.$key  = :$key ");
             }
-            if ($request->query->get("orderby") == $property->getName()) {
-                $orderArray[$property->getName()] = 'ASC';
-            } elseif ($request->query->get("orderbydesc") == $property->getName()) {
-                $orderArray[$property->getName()] = 'DESC';
+
+            $countQuery->setParameter($key, $value);
+        }
+
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+            if ($request->query->get($propertyName, false)) {
+                $findArray[$propertyName] = explode("|", $request->query->get($propertyName));
+                if(is_array($findArray[$propertyName])){
+                    $countQuery->andWhere("x.$propertyName IN(:$propertyName)");
+                } else {
+                    $countQuery->andWhere("x.$propertyName  = :$propertyName ");
+                }
+
+                $countQuery->setParameter($propertyName, $findArray[$propertyName]);
+            }
+            if ($request->query->get("orderby") == $propertyName) {
+                $orderArray[$propertyName] = 'ASC';
+            } elseif ($request->query->get("orderbydesc") == $propertyName) {
+                $orderArray[$propertyName] = 'DESC';
             }
         }
         if (preg_match('/^[0-9]+$/', $request->query->get("limit"))) {
@@ -104,21 +129,19 @@ abstract class AbstractController extends FOSRestController
         ) {
             $offset = (int)$request->query->get("start");
         }
-
+        $start = microtime(true);
         $objects = $repository->findBy($findArray, $orderArray, $limit, $offset);
-        if (count($objects) <= 0) {
-            $response['items'] = [];
-            $response['count'] = 0;
+        $response['_query_time'] = microtime(true) - $start;
 
-            return $response;
-        }
-        $count             = count($objects);
+        $start = microtime(true);
+        $response['count'] = +$countQuery->getQuery()->getResult()[0]['num'];
+        $response['_count_query_time'] = microtime(true) - $start;
+
         $response['items'] = $objects;
-        $response['count'] = $count;
+
 
         return $response;
     }
-
     /**
      * Обновление обьекта
      *
