@@ -342,7 +342,10 @@ abstract class AbstractController extends FOSRestController
         //устанавливаем значения
         foreach ($properties as $property) {
             $propertyName = CamelCase::fromCamelCase($property->getName());
-            $value        = isset($requestArray[$propertyName]) ? $requestArray[$propertyName] : null;
+            if(!array_key_exists($propName, $requestArray)){
+                continue;
+            }
+            $value        = $requestArray[$propertyName];
             $property->setAccessible(true);
 
             if (preg_match('/@var\s+([^\s]+)/', $property->getDocComment(), $matches)) {
@@ -355,6 +358,9 @@ abstract class AbstractController extends FOSRestController
 
                 if (class_exists($namespace . "\\" . $type)) {
                     $type = $namespace . "\\" . $type;
+                }
+                if(is_null($value)){
+                    $prop->setValue($object, $value);
                 }
 
                 if ($type == '\DateTime' && !is_null($value) && !is_object($value)) {
